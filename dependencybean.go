@@ -1,0 +1,13 @@
+package gonnect
+
+import (
+	"reflect"
+)
+
+type DependencyBean struct {
+	IsFunction      bool
+	IsGlobal        bool
+	Name            string
+	constructorType reflect.Type
+	fnValue         reflect.Value
+}
