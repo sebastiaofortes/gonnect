@@ -53,10 +53,15 @@ func (f *Container) StartApp(startFunc interface{}) {
 
 func (c *Container) getDependencyConstructorArgs(dependency DependencyBean) []reflect.Value {
 	args := []reflect.Value{}
+	var returnType reflect.Type
 	fmt.Printf("Quantidade de parâmetros: %d\n", dependency.constructorType.NumIn())
 	for i := 0; i < dependency.constructorType.NumIn(); i++ {
 		paramType := dependency.constructorType.In(i)
-		returnType := dependency.constructorType.Out(0)
+		if dependency.constructorType.NumOut() == 1{
+			returnType = dependency.constructorType.Out(0)
+		} else{
+			panic("as funções devem possuir apenas um tipo de retorno")
+		}
 		fmt.Printf("Parâmetro %d: %v\n", i, paramType)
 		fmt.Println("Procurando funções com retorno ou que implementem do tipo:", paramType)
 		// Procura na lista de um contrutuores um tipo igual ao do parametro
