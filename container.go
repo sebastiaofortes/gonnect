@@ -37,24 +37,17 @@ func (f *Container) StartApp(startFunc interface{}) {
 	fnValue := reflect.ValueOf(startFunc)
 	fnName := getFunctionName(fnValue)
 	ParamTypes := getParamTypes(fnType)
+	returnType := getReturnType(fnType)
 
-	if fnType.NumOut() == 1 {
-		returnType := fnType.Out(0)
+	dep := DependencyBean{constructorType: fnType, fnValue: fnValue, Name: fnName, constructorReturn: returnType, ParamTypes: ParamTypes}
 
-		dep := DependencyBean{constructorType: fnType, fnValue: fnValue, Name: fnName, constructorReturn: returnType, ParamTypes: ParamTypes}
+	args := f.getDependencyConstructorArgs(dep)
 
-		args := f.getDependencyConstructorArgs(dep)
+	// Chamando o construtor e enviando os parametros encontrados
+	dep.fnValue.Call(args)
 
-		// Chamando o construtor e enviando os parametros encontrados
-		dep.fnValue.Call(args)
-
-		fmt.Println("............Iniciando aplicação................")
-		fmt.Println()
-
-		// Iterar sobre o array de funções para inspecionar os parâmetros
-	} else{
-		panic("Erro, a função devem possuir um único tipo de retrono")
-	}
+	fmt.Println("............Iniciando aplicação................")
+	fmt.Println()
 }
 
 func (c *Container) getDependencyConstructorArgs(dependency DependencyBean) []reflect.Value {
