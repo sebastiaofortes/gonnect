@@ -52,8 +52,10 @@ func generateDependenciesArray(funcs []interface{}, isGlobal bool) map[string]De
 		fnType := reflect.TypeOf(fn)
 		fnValue := reflect.ValueOf(fn)
 		nameFunction := getFunctionName(fnValue)
+		paramTypes := getParamTypes(fnType)
 		if fnType.NumOut() == 1 {
-			ReflectTypeArray[nameFunction] = DependencyBean{constructorType: fnType, fnValue: fnValue, Name: nameFunction, IsGlobal: isGlobal, IsFunction: true}
+			returnType := fnType.Out(0)
+			ReflectTypeArray[nameFunction] = DependencyBean{constructorType: fnType, fnValue: fnValue, Name: nameFunction, IsGlobal: isGlobal, IsFunction: true, constructorReturn: returnType, ParamTypes: paramTypes}
 		} else {
 			fmt.Printf("Erro, a função %s deve possuir um único tipo de retrono \n", fnType.Name())
 			panic("Erro")
@@ -64,4 +66,12 @@ func generateDependenciesArray(funcs []interface{}, isGlobal bool) map[string]De
 
 func getFunctionName(i reflect.Value) string {
 	return runtime.FuncForPC(i.Pointer()).Name()
+}
+
+func getParamTypes(fnType reflect.Type) []reflect.Type{
+	var paramTypes []reflect.Type
+	for i := 0; i < fnType.NumIn(); i++ {
+		paramTypes = append(paramTypes, fnType.In(i))
+	}
+	return paramTypes
 }

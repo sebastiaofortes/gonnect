@@ -36,37 +36,37 @@ func (f *Container) StartApp(startFunc interface{}) {
 	fnType := reflect.TypeOf(startFunc)
 	fnValue := reflect.ValueOf(startFunc)
 	fnName := getFunctionName(fnValue)
+	ParamTypes := getParamTypes(fnType)
 
-	dep := DependencyBean{constructorType: fnType, fnValue: fnValue, Name: fnName}
+	if fnType.NumOut() == 1 {
+		returnType := fnType.Out(0)
 
-	args := f.getDependencyConstructorArgs(dep)
+		dep := DependencyBean{constructorType: fnType, fnValue: fnValue, Name: fnName, constructorReturn: returnType, ParamTypes: ParamTypes}
 
-	// Chamando o construtor e enviando os parametros encontrados
-	dep.fnValue.Call(args)
+		args := f.getDependencyConstructorArgs(dep)
 
-	fmt.Println("............Iniciando aplicação................")
-	fmt.Println()
+		// Chamando o construtor e enviando os parametros encontrados
+		dep.fnValue.Call(args)
 
-	// Iterar sobre o array de funções para inspecionar os parâmetros
+		fmt.Println("............Iniciando aplicação................")
+		fmt.Println()
 
+		// Iterar sobre o array de funções para inspecionar os parâmetros
+	} else{
+		panic("Erro, a função devem possuir um único tipo de retrono")
+	}
 }
 
 func (c *Container) getDependencyConstructorArgs(dependency DependencyBean) []reflect.Value {
 	args := []reflect.Value{}
-	var returnType reflect.Type
-	fmt.Printf("Quantidade de parâmetros: %d\n", dependency.constructorType.NumIn())
-	for i := 0; i < dependency.constructorType.NumIn(); i++ {
-		paramType := dependency.constructorType.In(i)
-		if dependency.constructorType.NumOut() == 1{
-			returnType = dependency.constructorType.Out(0)
-		} else{
-			panic("as funções devem possuir apenas um tipo de retorno")
-		}
-		fmt.Printf("Parâmetro %d: %v\n", i, paramType)
+	fmt.Printf("Quantidade de parâmetros: %d\n", len(dependency.ParamTypes))
+	for _, paramType := range dependency.ParamTypes {
+
+		fmt.Printf("Parâmetro: %v\n", paramType)
 		fmt.Println("Procurando funções com retorno ou que implementem do tipo:", paramType)
 		// Procura na lista de um contrutuores um tipo igual ao do parametro
 
-		injectableDependency := c.searchInjectableDependencies(paramType, returnType)
+		injectableDependency := c.searchInjectableDependencies(paramType, dependency.constructorReturn)
 
 		if injectableDependency.IsFunction {
 			argumants := c.getDependencyConstructorArgs(injectableDependency)
