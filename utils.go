@@ -49,13 +49,8 @@ func implementsInterface(structType reflect.Type, interfaceType reflect.Type) bo
 func generateDependenciesArray(funcs []interface{}, isGlobal bool) map[string]DependencyBean {
 	ReflectTypeArray := make(map[string]DependencyBean)
 	for _, fn := range funcs {
-		fnType := reflect.TypeOf(fn)
-		fnValue := reflect.ValueOf(fn)
-		nameFunction := getFunctionName(fnValue)
-		paramTypes := getParamTypes(fnType)
-		returnType := getReturnType(fnType)
-		ReflectTypeArray[nameFunction] = DependencyBean{constructorType: fnType, fnValue: fnValue, Name: nameFunction, IsGlobal: isGlobal, IsFunction: true, constructorReturn: returnType, ParamTypes: paramTypes}
-
+		dep := generateDependencyBean(fn, isGlobal)
+		ReflectTypeArray[dep.Name] = dep
 	}
 	return ReflectTypeArray
 }
@@ -79,4 +74,20 @@ func getReturnType(fnType reflect.Type) reflect.Type {
 		message := fmt.Sprintf("Erro, a função %s deve possuir um único tipo de retrono \n", fnType.Name())
 		panic(message)
 	}
+}
+
+func generateDependencyBean(fn interface{}, isGlobal bool) DependencyBean{
+	fnType := reflect.TypeOf(fn)
+	fnValue := reflect.ValueOf(fn)
+	nameFunction := getFunctionName(fnValue)
+	paramTypes := getParamTypes(fnType)
+	returnType := getReturnType(fnType)
+	return DependencyBean{
+		constructorType: fnType, 
+		fnValue: fnValue, 
+		Name: nameFunction, 
+		IsGlobal: isGlobal, 
+		IsFunction: true, 
+		constructorReturn: returnType, 
+		ParamTypes: paramTypes}
 }

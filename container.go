@@ -33,13 +33,7 @@ func (f *Container) StartApp(startFunc interface{}) {
 	quantDep := len(f.dependencies)
 	fmt.Println(quantDep, " dependencias registradas")
 
-	fnType := reflect.TypeOf(startFunc)
-	fnValue := reflect.ValueOf(startFunc)
-	fnName := getFunctionName(fnValue)
-	ParamTypes := getParamTypes(fnType)
-	returnType := getReturnType(fnType)
-
-	dep := DependencyBean{constructorType: fnType, fnValue: fnValue, Name: fnName, constructorReturn: returnType, ParamTypes: ParamTypes}
+	dep := generateDependencyBean(startFunc, false)
 
 	args := f.getDependencyConstructorArgs(dep)
 
