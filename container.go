@@ -2,6 +2,7 @@ package gonnect
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 )
 
@@ -29,28 +30,27 @@ func (c *Container) AddGlobalDependencies(deps []interface{}) {
 
 func (f *Container) StartApp(startFunc interface{}) {
 
-	fmt.Println("Inicianfo app.....")
+	fmt.Println("Starting framework.....")
 	quantDep := len(f.dependencies)
-	fmt.Println(quantDep, " dependencias registradas")
+	fmt.Println(quantDep, " registered dependencies")
 
 	dep := generateDependencyBean(startFunc, false)
 
 	args := f.getDependencyConstructorArgs(dep)
 
+	fmt.Println("............Starting application................")
+	fmt.Println()
+
 	// Chamando o construtor e enviando os parametros encontrados
 	dep.fnValue.Call(args)
 
-	fmt.Println("............Iniciando aplicação................")
-	fmt.Println()
 }
 
 func (c *Container) getDependencyConstructorArgs(dependency DependencyBean) []reflect.Value {
 	args := []reflect.Value{}
-	fmt.Printf("Quantidade de parâmetros: %d\n", len(dependency.ParamTypes))
+	fmt.Printf("constructor: %s, number of parameters: %d\n", dependency.Name, len(dependency.ParamTypes))
 	for _, paramType := range dependency.ParamTypes {
-
-		fmt.Printf("Parâmetro: %v\n", paramType)
-		fmt.Println("Procurando funções com retorno ou que implementem do tipo:", paramType)
+		
 		// Procura na lista de um contrutuores um tipo igual ao do parametro
 
 		injectableDependency := c.searchInjectableDependencies(paramType, dependency.constructorReturn)
@@ -58,8 +58,8 @@ func (c *Container) getDependencyConstructorArgs(dependency DependencyBean) []re
 		if injectableDependency.IsFunction {
 			argumants := c.getDependencyConstructorArgs(injectableDependency)
 			resp := injectableDependency.fnValue.Call(argumants)
-			fmt.Println("Adicionando contrutor ao slice de argumentos ***********")
 			args = append(args, resp...)
+			log.Println("Injecting: ", injectableDependency.Name, " in ", dependency.Name)
 			if injectableDependency.IsGlobal {
 				// Change function dependency to object dependency
 				injectableDependency.fnValue = resp[0]
@@ -79,12 +79,8 @@ func (c *Container) searchInjectableDependencies(paramType reflect.Type, returnT
 	var dependenciesFound []DependencyBean
 	var depFound DependencyBean
 	if isInterface(paramType) {
-		// Chama a função searchImplementations
-		fmt.Println(paramType, " É uma interface ")
 		dependenciesFound = c.searchImplementations(paramType)
 	} else {
-		fmt.Println("Não é uma interface")
-		// Chama a função searchType
 		dependenciesFound = c.searchTypes(paramType)
 	}
 	if len(dependenciesFound) > 1 {
@@ -104,9 +100,8 @@ func (f *Container) searchTypes(paramType reflect.Type) []DependencyBean {
 	for fnName, dependency := range f.dependencies {
 		for i := 0; i < dependency.constructorType.NumOut(); i++ {
 			returnType := dependency.constructorType.Out(i)
-			//fmt.Printf("Retorno %d: %v\n", i, returnType)
 			if returnType == paramType {
-				fmt.Println("Encontrei a o retorno na função", fnName, " tipo ", returnType)
+				fmt.Println("parameter: ", paramType, " compatible => ", fnName, " type ", returnType)
 				dependenciesFound = append(dependenciesFound, dependency)
 			}
 		}
@@ -120,9 +115,8 @@ func (f *Container) searchImplementations(paramType reflect.Type) []DependencyBe
 		for i := 0; i < dependency.constructorType.NumOut(); i++ {
 			returnType := dependency.constructorType.Out(i)
 			implements := implementsInterface(returnType, paramType)
-			//fmt.Printf("Retorno %d: %v\n", i, returnType)
 			if implements {
-				fmt.Println("Encontrei a o retorno na função", fnName, " tipo ", returnType)
+				fmt.Println("parameter: ", paramType, " implementation => ", fnName, " type ", returnType)
 				dependenciesFound = append(dependenciesFound, dependency)
 			}
 		}
