@@ -12,27 +12,13 @@ func isInterface(r reflect.Type) bool {
 }
 
 func searchDisambiguation(returnType reflect.Type, dependenciesFound []DependencyBean) DependencyBean {
-
-	fmt.Println("returnType: ", returnType)
 	// Iterar sobre os campos da struct e ler os metadados
-	numField := returnType.NumField()
-	if numField == 0 {
-		message := fmt.Sprintf("strct %v com mais de um contrutor e sem valores para desqualificar", returnType)
-		panic(message)
-	}
-	for i := 0; i < numField; i++ {
-		field := returnType.Field(i)
-		fieldName := field.Name
-		fmt.Println(fieldName)
-		// obtem o metadado da tag
-		tagValue := field.Tag.Get("sebas")
-		fmt.Println("tagValue: ", tagValue)
-		fmt.Println("valores de found :", dependenciesFound)
+	tags := getTagsInType(returnType)
+	for fieldName, tagValue := range tags {
 		for _, dependency := range dependenciesFound {
-			fmt.Println("dentro de name: ", dependency.Name)
 			nameParts := strings.Split(dependency.Name, ".")
 			if nameParts[len(nameParts)-1] == tagValue {
-				fmt.Println("Encontrado um METADADO COMPATIVEL")
+				fmt.Printf("Desambiguação: METADADO em %v em %s = %s", returnType, fieldName, tagValue)
 				return dependency
 			}
 		}
@@ -76,18 +62,35 @@ func getReturnType(fnType reflect.Type) reflect.Type {
 	}
 }
 
-func generateDependencyBean(fn interface{}, isGlobal bool) DependencyBean{
+func generateDependencyBean(fn interface{}, isGlobal bool) DependencyBean {
 	fnType := reflect.TypeOf(fn)
 	fnValue := reflect.ValueOf(fn)
 	nameFunction := getFunctionName(fnValue)
 	paramTypes := getParamTypes(fnType)
 	returnType := getReturnType(fnType)
 	return DependencyBean{
-		constructorType: fnType, 
-		fnValue: fnValue, 
-		Name: nameFunction, 
-		IsGlobal: isGlobal, 
-		IsFunction: true, 
-		constructorReturn: returnType, 
-		ParamTypes: paramTypes}
+		constructorType:   fnType,
+		fnValue:           fnValue,
+		Name:              nameFunction,
+		IsGlobal:          isGlobal,
+		IsFunction:        true,
+		constructorReturn: returnType,
+		ParamTypes:        paramTypes}
+}
+
+func getTagsInType(objectType reflect.Type) map[string]string {
+	tags := make(map[string]string)
+	numField := objectType.NumField()
+	if numField == 0 {
+		message := fmt.Sprintf("struct %v with more than one constructor and no values to disqualify", objectType)
+		panic(message)
+	}
+	for i := 0; i < numField; i++ {
+		field := objectType.Field(i)
+		// obtem o metadado da tag
+		tagValue := field.Tag.Get("sebas")
+		fmt.Println("tagValue: ", tagValue)
+		tags[field.Name] = tagValue
+	}
+	return tags
 }
